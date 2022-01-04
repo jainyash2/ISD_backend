@@ -112,8 +112,9 @@ exports.itemCost3 = (req, res) => {
 }
 
 exports.toInventory = (req, res) => {
-    const item_id = req.body.item_id;
-    Item.findOneAndUpdate({ _id: item_id }, { $inc: { item_count: 1, issued_count: -1 } }, function (err, doc) {
+    const item_name = req.params.item_name;
+    console.log(item_name);
+    Item.findOneAndUpdate(item_name, { $inc: { issued_count: -1 } }, function (err, doc) {
         if (err) {
             res.status(404).json({ error: err })
         }
@@ -122,4 +123,57 @@ exports.toInventory = (req, res) => {
         }
     }
     )
+}
+
+exports.issuedDecreaser = (req, res) => {
+    const item_id = req.params.itemId;
+    //console.log(item_id);
+    Item.findById(item_id, (err, item) => {
+        if (!err) {
+            if (item) {
+                //console.log(item)
+                const ord = {
+                    _id: item._id,
+                    item_name: item.item_name,
+                    item_description: item.item_description,
+                    item_id: item.item_id,
+                    item_count: item.item_count,
+                    expected_cost: item.expected_cost,
+                    issued_count: item.issued_count + 1,
+                    date_purchased: item.date_purchased
+                }
+
+                if (item.item_count == ord.issued_count) {
+                    Item.findByIdAndDelete(item_id, (err) => {
+                        if (err) {
+                            //console.log("Item errrorrrrr1");
+                            res.status(500).json(err);
+                        } else {
+                            //console.log("Item deleted");
+                            res.status(200).json("Item issued successfully");
+                        }
+                    });
+                }
+                else {
+                    Item.findByIdAndUpdate(item_id, { $set: ord }, (err) => {
+                        if (err) {
+                            //console.log("Item errrorrrrr2");
+                            res.status(500).json(err);
+                        } else {
+                            //console.log("Itemssssssss");
+                            res.status(200).json("item issued successfully")
+                        }
+                    });
+                }
+
+            } else {
+                //console.log("Item errrorrrrr3");
+                res.send("item not found");
+            }
+        } else {
+            //console.log("Item errrorrrrr4");
+            res.send(err);
+        }
+    })
+
 }
